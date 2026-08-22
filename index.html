@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1018">
+  <title>Bitcoin Power Law Kauf-Indikator – Beta 1.0</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#080c13; --panel:#101826; --panel2:#141e2e; --line:#263348;
+      --text:#f3f6fb; --muted:#95a3b8; --btc:#f7931a; --btc2:#ffb347;
+      --green:#62d394; --yellow:#efc65f; --red:#ef7373; --input:#0a111d;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% -10%,rgba(247,147,26,.14),transparent 34rem),var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text)}
+    .wrap{max-width:980px;margin:0 auto;padding:28px 18px 48px}
+    header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:22px}
+    h1{margin:0;font-size:clamp(26px,4vw,39px);line-height:1.05;letter-spacing:-.035em}
+    h1 span{color:var(--btc)}
+    .sub{color:var(--muted);max-width:720px;line-height:1.55;margin:10px 0 0}
+    .badge{border:1px solid #76501d;color:var(--btc2);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+    .panel{background:linear-gradient(180deg,rgba(255,255,255,.025),transparent),var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 14px 40px rgba(0,0,0,.22)}
+    .inputs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    label{display:block;color:var(--muted);font-size:12px;font-weight:700;margin:0 0 7px 2px}
+    input,button{font:inherit;border-radius:11px;border:1px solid var(--line)}
+    input{width:100%;padding:13px 14px;background:var(--input);color:var(--text);outline:none}
+    input:focus{border-color:#76501d;box-shadow:0 0 0 3px rgba(247,147,26,.10)}
+    .priceRow{display:grid;grid-template-columns:1fr auto;gap:8px}
+    .toggle{display:flex;background:var(--input);border:1px solid var(--line);padding:3px;border-radius:11px}
+    .toggle button{border:0;padding:8px 11px;background:transparent;color:var(--muted);cursor:pointer}
+    .toggle button.active{background:#2b3547;color:#fff}
+    .actions{margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .primary{background:var(--btc);color:#171009;border:0;padding:10px 14px;font-weight:800;cursor:pointer}
+    .primary:hover{filter:brightness(1.06)}
+    .primary:disabled{opacity:.55;cursor:default}
+    .status{font-size:12px;color:var(--muted)} .status.ok{color:#8bddad}.status.warn{color:#f1cd76}
+    .resultGrid{display:grid;grid-template-columns:230px 1fr;gap:20px;margin-top:20px}
+    .bandBox{display:flex;flex-direction:column;justify-content:center}
+    .bandLabel{font-size:13px;color:var(--muted)}
+    .bandVal{font-size:49px;font-weight:850;letter-spacing:-.055em;margin-top:1px}
+    .bar{height:12px;border-radius:999px;background:#222d3e;overflow:hidden;margin-top:13px}
+    .bar>div{height:100%;width:0;background:linear-gradient(90deg,#54c889,#edc75f,#eb6f6f);transition:width .2s ease}
+    .small{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+    .risks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .risk{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:15px 13px;min-width:0}
+    .risk .drop{font-size:12px;color:var(--muted)}
+    .risk .prob{font-size:28px;font-weight:850;letter-spacing:-.035em;margin-top:5px}
+    .risk .target{font-size:11px;color:var(--muted);margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .details{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+    .detail{background:#0c1421;border:1px solid var(--line);border-radius:12px;padding:13px}
+    .detail .k{font-size:11px;color:var(--muted)} .detail .v{font-size:14px;font-weight:750;margin-top:4px}
+    details{margin-top:18px} summary{cursor:pointer;font-weight:750;color:#d6deea}
+    .method{font-size:13px;line-height:1.65;color:var(--muted);margin-top:12px}
+    .method code{color:#d9e4f4;background:#09111e;padding:2px 5px;border-radius:5px}
+    footer{font-size:11px;color:#69778b;line-height:1.55;margin-top:18px}
+    @media(max-width:760px){header{flex-direction:column}.inputs,.resultGrid{grid-template-columns:1fr}.risks{grid-template-columns:1fr 1fr}.details{grid-template-columns:1fr}.bandVal{font-size:43px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span>₿</span> Power Law Kauf-Indikator</h1>
+      <p class="sub">Historische Wahrscheinlichkeit, dass Bitcoin innerhalb der folgenden vier Jahre noch mindestens 5 %, 10 %, 15 % oder 20 % günstiger wird.</p>
+    </div>
+    <div class="badge">BETA 1.0</div>
+  </header>
+
+  <section class="panel">
+    <div class="inputs">
+      <div>
+        <label for="date">Datum</label>
+        <input id="date" type="date">
+      </div>
+      <div>
+        <label for="price">Bitcoin-Preis</label>
+        <div class="priceRow">
+          <input id="price" type="number" min="0.01" step="0.01" inputmode="decimal">
+          <div class="toggle">
+            <button id="eurBtn" type="button" class="active">EUR</button>
+            <button id="usdBtn" type="button">USD</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="refreshBtn" class="primary" type="button">Aktuellen Kurs laden</button>
+      <span id="status" class="status">Starte…</span>
+    </div>
+
+    <div class="resultGrid">
+      <div class="bandBox">
+        <div class="bandLabel">Power-Law-Bandposition</div>
+        <div id="bandVal" class="bandVal">–</div>
+        <div class="bar"><div id="bandFill"></div></div>
+        <div class="small">0 % = Support · 100 % = Resistance</div>
+      </div>
+
+      <div class="risks">
+        <div class="risk"><div class="drop">noch ≥ 5 % günstiger</div><div id="p5" class="prob">–</div><div id="t5" class="target">–</div></div>
+        <div class="risk"><div class="drop">noch ≥ 10 % günstiger</div><div id="p10" class="prob">–</div><div id="t10" class="target">–</div></div>
+        <div class="risk"><div class="drop">noch ≥ 15 % günstiger</div><div id="p15" class="prob">–</div><div id="t15" class="target">–</div></div>
+        <div class="risk"><div class="drop">noch ≥ 20 % günstiger</div><div id="p20" class="prob">–</div><div id="t20" class="target">–</div></div>
+      </div>
+    </div>
+
+    <div class="details">
+      <div class="detail"><div class="k">Preis intern für Modell</div><div id="usdInternal" class="v">–</div></div>
+      <div class="detail"><div class="k">Support / Resistance</div><div id="bounds" class="v">–</div></div>
+      <div class="detail"><div class="k">EUR/USD für gewähltes Datum</div><div id="fxInfo" class="v">–</div></div>
+    </div>
+
+    <details>
+      <summary>Methodik Beta 1.0</summary>
+      <div class="method">
+        Der laufende Rechner benötigt nur Datum und Bitcoin-Preis. Die Bandposition basiert auf
+        <code>A = 10^-17.016</code>, <code>n = 5.845</code>, Support-Offset <code>-0.450</code> und
+        Resistance-Offset <code>+0.542</code>. Die vier Wahrscheinlichkeiten stammen aus der eingefrorenen
+        glatten monotonen Beta-1.0-Kalibrierung. Historische Beobachtungen ab 2013 wurden in Touch-Phasen
+        gruppiert; jede Phase zählt insgesamt gleich stark. Bewertet wurde jeweils, ob Bitcoin innerhalb der
+        folgenden vier Jahre mindestens 5 %, 10 %, 15 % oder 20 % günstiger wurde.
+        <br><br>
+        EUR-Eingaben werden für die Modellberechnung mit dem EUR/USD-Kurs des gewählten Datums in USD umgerechnet.
+        Bei Zukunftsdaten ist der zukünftige Wechselkurs unbekannt; dann verwendet die Seite den aktuellen EUR/USD-Kurs als Näherung.
+        Die Kalibrierung selbst bleibt unverändert, bis eine neue Modellversion veröffentlicht wird.
+      </div>
+    </details>
+  </section>
+
+  <footer>Historische Wahrscheinlichkeiten, keine Kursgarantie oder Anlageberatung. Live-BTC-Preis: CoinGecko. EUR/USD: Frankfurter. Fällt ein Live-Dienst aus, bleibt die manuelle USD-Eingabe vollständig nutzbar.</footer>
+</div>
+
+<script>
+"use strict";
+
+// Power-Law-Modell
+const GENESIS_UTC = Date.UTC(2009,0,3);
+const A_EXP = -17.016;
+const N = 5.845;
+const SUPPORT_OFFSET = -0.450;
+const RESISTANCE_OFFSET = 0.542;
+
+// Beta 1.0 – glatte monotone Bernstein-Kalibrierung, Grad 8.
+// Je Zeile: Koeffizienten für P(-5), P(-10), P(-15), P(-20).
+const COEFF = [
+  [0.0,0.5992944735397866,0.7410003328171384,0.7410003328171384,0.7410003328171384,0.7817731096438832,1.0,1.0,1.0],
+  [0.0,0.21853995206035035,0.7219491632064864,0.7219491632064864,0.7219491632064864,0.7219491632064864,1.0,1.0,1.0],
+  [0.0,0.11803843368240273,0.6398710678215307,0.6398710678215307,0.6398710678215307,0.6473970282904346,1.0,1.0,1.0],
+  [0.0,0.0,0.5706955810657577,0.5706955810657578,0.5706955810657578,0.626151894343534,0.9980049926790964,0.9980049926790964,0.9980049926790964]
+];
+const BINOM8 = [1,8,28,56,70,56,28,8,1];
+
+let currency = "EUR";
+let latest = {usd:null,eur:null,eurUsd:null,updatedAt:null};
+const fxCache = new Map();
+let calcToken = 0;
+
+const $ = id => document.getElementById(id);
+const dateInput = $("date"), priceInput = $("price"), statusEl = $("status");
+
+function localISODate(d=new Date()){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function setStatus(text,type=""){statusEl.textContent=text;statusEl.className=`status ${type}`}
+function fmtMoney(v,curr=currency){return Number.isFinite(v)?new Intl.NumberFormat("de-DE",{style:"currency",currency:curr,maximumFractionDigits:0}).format(v):"–"}
+function fmtPct(v){return Number.isFinite(v)?`${v.toFixed(1).replace(".",",")} %`:"–"}
+
+function daysSinceGenesis(dateStr){
+  const [y,m,d]=dateStr.split("-").map(Number);
+  return Math.max(1,Math.round((Date.UTC(y,m-1,d)-GENESIS_UTC)/86400000));
+}
+function powerLaw(dateStr,priceUsd){
+  const days=daysSinceGenesis(dateStr);
+  const fair=Math.pow(10,A_EXP)*Math.pow(days,N);
+  const support=fair*Math.pow(10,SUPPORT_OFFSET);
+  const resistance=fair*Math.pow(10,RESISTANCE_OFFSET);
+  const rawBand=(Math.log10(priceUsd)-Math.log10(support))/(Math.log10(resistance)-Math.log10(support))*100;
+  return {days,fair,support,resistance,rawBand,band:Math.max(0,Math.min(100,rawBand))};
+}
+function bernsteinProbability(bandPct,coeff){
+  const x=Math.max(0,Math.min(1,bandPct/100));
+  let p=0;
+  for(let k=0;k<=8;k++) p+=coeff[k]*BINOM8[k]*Math.pow(x,k)*Math.pow(1-x,8-k);
+  return Math.max(0,Math.min(1,p))*100;
+}
+
+async function fetchFx(dateStr){
+  if(dateStr===localISODate() && latest.eurUsd) return latest.eurUsd;
+  if(fxCache.has(dateStr)) return fxCache.get(dateStr);
+  const today=localISODate();
+  const url=dateStr>today
+    ? "https://api.frankfurter.dev/v2/rate/EUR/USD"
+    : `https://api.frankfurter.dev/v2/rate/EUR/USD?date=${encodeURIComponent(dateStr)}`;
+  const r=await fetch(url,{cache:"no-store"});
+  if(!r.ok) throw new Error("FX-Abruf fehlgeschlagen");
+  const data=await r.json(), rate=Number(data.rate);
+  if(!Number.isFinite(rate)||rate<=0) throw new Error("Ungültiger FX-Kurs");
+  fxCache.set(dateStr,rate);
+  return rate;
+}
+
+async function recalc(){
+  const myToken=++calcToken;
+  const dateStr=dateInput.value, price=Number(priceInput.value);
+  if(!dateStr||!Number.isFinite(price)||price<=0) return;
+  let eurUsd=latest.eurUsd, priceUsd=price;
+  try{
+    if(currency==="EUR"){
+      eurUsd=await fetchFx(dateStr);
+      if(myToken!==calcToken) return;
+      priceUsd=price*eurUsd;
+      if(dateStr>localISODate()) setStatus("Zukunftsdatum: aktueller EUR/USD-Kurs als Näherung.","warn");
+    }
+  }catch(e){
+    if(currency==="EUR"&&latest.eurUsd){
+      eurUsd=latest.eurUsd; priceUsd=price*eurUsd;
+      setStatus("Historischer EUR/USD nicht erreichbar – aktueller Kurs als Ersatz.","warn");
+    }else if(currency==="EUR"){
+      setStatus("EUR/USD nicht erreichbar. Für vollständig offline: USD wählen.","warn"); return;
+    }
+  }
+
+  const pl=powerLaw(dateStr,priceUsd);
+  const probs=COEFF.map(c=>bernsteinProbability(pl.band,c));
+  $("bandVal").textContent=fmtPct(pl.band);
+  $("bandFill").style.width=`${pl.band}%`;
+  [5,10,15,20].forEach((drop,i)=>{
+    $(`p${drop}`).textContent=fmtPct(probs[i]);
+    $(`t${drop}`).textContent=`Ziel: ${fmtMoney(price*(1-drop/100),currency)}`;
+  });
+  $("usdInternal").textContent=fmtMoney(priceUsd,"USD");
+  const displaySupport=currency==="EUR"&&eurUsd?pl.support/eurUsd:pl.support;
+  const displayResistance=currency==="EUR"&&eurUsd?pl.resistance/eurUsd:pl.resistance;
+  $("bounds").textContent=`${fmtMoney(displaySupport,currency)} / ${fmtMoney(displayResistance,currency)}`;
+  $("fxInfo").textContent=currency==="EUR"&&eurUsd?`1 EUR = ${eurUsd.toFixed(4)} USD`:"USD-Modus";
+}
+
+async function loadCurrent(){
+  dateInput.value=localISODate();
+  $("refreshBtn").disabled=true; setStatus("Aktuellen BTC-Preis laden…");
+  try{
+    const url="https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,eur&include_last_updated_at=true";
+    const r=await fetch(url,{cache:"no-store"});
+    if(!r.ok) throw new Error("CoinGecko nicht erreichbar");
+    const data=await r.json();
+    const usd=Number(data?.bitcoin?.usd), eur=Number(data?.bitcoin?.eur);
+    if(!Number.isFinite(usd)||!Number.isFinite(eur)) throw new Error("Ungültige Kursdaten");
+    latest={usd,eur,eurUsd:usd/eur,updatedAt:data?.bitcoin?.last_updated_at||null};
+    fxCache.set(localISODate(),latest.eurUsd);
+    priceInput.value=(currency==="EUR"?eur:usd).toFixed(2);
+    setStatus("Aktueller Kurs geladen.","ok");
+    await recalc();
+  }catch(e){
+    setStatus("Live-Kurs nicht erreichbar – Preis manuell eintragen.","warn");
+    await recalc();
+  }finally{$("refreshBtn").disabled=false}
+}
+
+async function setCurrency(next){
+  if(next===currency) return;
+  const old=currency, price=Number(priceInput.value), dateStr=dateInput.value||localISODate();
+  let rate=null;
+  try{rate=await fetchFx(dateStr)}catch(e){rate=latest.eurUsd}
+  currency=next;
+  $("eurBtn").classList.toggle("active",next==="EUR");
+  $("usdBtn").classList.toggle("active",next==="USD");
+  if(Number.isFinite(price)&&rate){
+    priceInput.value=(old==="EUR"&&next==="USD"?price*rate:price/rate).toFixed(2);
+  }else if(dateStr===localISODate()&&latest[next.toLowerCase()]){
+    priceInput.value=latest[next.toLowerCase()].toFixed(2);
+  }
+  await recalc();
+}
+
+dateInput.addEventListener("change",recalc);
+priceInput.addEventListener("input",recalc);
+$("refreshBtn").addEventListener("click",loadCurrent);
+$("eurBtn").addEventListener("click",()=>setCurrency("EUR"));
+$("usdBtn").addEventListener("click",()=>setCurrency("USD"));
+
+dateInput.value=localISODate();
+loadCurrent();
+</script>
+</body>
+</html>
