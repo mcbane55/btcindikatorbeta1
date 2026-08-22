@@ -5,15 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1018">
   <title>Bitcoin Power Law Kauf-Indikator – Beta 1.0</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="apple-touch-icon.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="theme-color" content="#000000">
   <style>
     :root {
       color-scheme: dark;
@@ -31,9 +22,11 @@
     .badge{border:1px solid #76501d;color:var(--btc2);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;white-space:nowrap}
     .panel{background:linear-gradient(180deg,rgba(255,255,255,.025),transparent),var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 14px 40px rgba(0,0,0,.22)}
     .inputs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .inputs>div{min-width:0}
     label{display:block;color:var(--muted);font-size:12px;font-weight:700;margin:0 0 7px 2px}
     input,button{font:inherit;border-radius:11px;border:1px solid var(--line)}
-    input{width:100%;padding:13px 14px;background:var(--input);color:var(--text);outline:none}
+    input{width:100%;min-width:0;max-width:100%;padding:13px 14px;background:var(--input);color:var(--text);outline:none}
+    input[type="date"]{width:100%;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none}
     input:focus{border-color:#76501d;box-shadow:0 0 0 3px rgba(247,147,26,.10)}
     .priceRow{display:grid;grid-template-columns:1fr auto;gap:8px}
     .toggle{display:flex;background:var(--input);border:1px solid var(--line);padding:3px;border-radius:11px}
