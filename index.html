@@ -22,7 +22,7 @@
       --green:#c89b52; --yellow:#f2b84b; --red:#d86f45; --input:#0d0b08;
     }
     *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% -10%,rgba(247,147,26,.18),transparent 34rem),radial-gradient(circle at 10% 110%,rgba(255,179,71,.06),transparent 28rem),var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text)}
+    body{margin:0;min-height:100vh;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text)}
     .wrap{max-width:980px;margin:0 auto;padding:28px 18px 48px}
     header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:22px}
     h1{margin:0;font-size:clamp(26px,4vw,39px);line-height:1.05;letter-spacing:-.035em}
@@ -140,7 +140,7 @@
     </details>
   </section>
 
-  <footer>Historische Wahrscheinlichkeiten, keine Kursgarantie oder Anlageberatung. Live-BTC-Preis: CoinGecko. EUR/USD: Frankfurter. Fällt ein Live-Dienst aus, bleibt die manuelle USD-Eingabe vollständig nutzbar.</footer>
+  <footer>Historische Wahrscheinlichkeiten, keine Kursgarantie oder Anlageberatung. Live-BTC-Preis: CoinGecko, ersatzweise Coinbase. EUR/USD: Frankfurter. Fällt ein Live-Dienst aus, bleibt die manuelle USD-Eingabe vollständig nutzbar.</footer>
 </div>
 
 <script>
@@ -249,20 +249,37 @@ async function recalc(){
   $("fxInfo").textContent=currency==="EUR"&&eurUsd?`1 EUR = ${eurUsd.toFixed(4)} USD`:"USD-Modus";
 }
 
+async function fetchCurrentBtcPrice(){
+  try{
+    const url="https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,eur&include_last_updated_at=true";
+    const r=await fetch(url,{cache:"no-store"});
+    if(!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
+    const data=await r.json();
+    const usd=Number(data?.bitcoin?.usd), eur=Number(data?.bitcoin?.eur);
+    if(!Number.isFinite(usd)||!Number.isFinite(eur)) throw new Error("Ungültige CoinGecko-Kursdaten");
+    return {usd,eur,updatedAt:data?.bitcoin?.last_updated_at||null,source:"CoinGecko"};
+  }catch(coinGeckoError){
+    const [usdResponse,eurResponse]=await Promise.all([
+      fetch("https://api.coinbase.com/v2/prices/BTC-USD/spot",{cache:"no-store"}),
+      fetch("https://api.coinbase.com/v2/prices/BTC-EUR/spot",{cache:"no-store"})
+    ]);
+    if(!usdResponse.ok||!eurResponse.ok) throw coinGeckoError;
+    const [usdData,eurData]=await Promise.all([usdResponse.json(),eurResponse.json()]);
+    const usd=Number(usdData?.data?.amount), eur=Number(eurData?.data?.amount);
+    if(!Number.isFinite(usd)||!Number.isFinite(eur)) throw coinGeckoError;
+    return {usd,eur,updatedAt:Math.floor(Date.now()/1000),source:"Coinbase"};
+  }
+}
+
 async function loadCurrent(){
   dateInput.value=localISODate();
   $("refreshBtn").disabled=true; setStatus("Aktuellen BTC-Preis laden…");
   try{
-    const url="https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,eur&include_last_updated_at=true";
-    const r=await fetch(url,{cache:"no-store"});
-    if(!r.ok) throw new Error("CoinGecko nicht erreichbar");
-    const data=await r.json();
-    const usd=Number(data?.bitcoin?.usd), eur=Number(data?.bitcoin?.eur);
-    if(!Number.isFinite(usd)||!Number.isFinite(eur)) throw new Error("Ungültige Kursdaten");
-    latest={usd,eur,eurUsd:usd/eur,updatedAt:data?.bitcoin?.last_updated_at||null};
+    const quote=await fetchCurrentBtcPrice();
+    latest={usd:quote.usd,eur:quote.eur,eurUsd:quote.usd/quote.eur,updatedAt:quote.updatedAt};
     fxCache.set(localISODate(),latest.eurUsd);
-    priceInput.value=(currency==="EUR"?eur:usd).toFixed(2);
-    setStatus("Aktueller Kurs geladen.","ok");
+    priceInput.value=(currency==="EUR"?quote.eur:quote.usd).toFixed(2);
+    setStatus(`Aktueller Kurs über ${quote.source} geladen.`,"ok");
     await recalc();
   }catch(e){
     setStatus("Live-Kurs nicht erreichbar – Preis manuell eintragen.","warn");
